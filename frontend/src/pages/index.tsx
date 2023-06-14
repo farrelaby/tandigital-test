@@ -49,6 +49,7 @@ export default function Home() {
                       data={data}
                       key={data.id}
                       id={data.id}
+                      refetch={() => voucherData.refetch()}
                     />
                   );
                 })
@@ -66,11 +67,13 @@ function VoucherCard({
   user,
   data,
   id,
+  refetch,
 }: // handlers,
 {
   user: { isAdmin: boolean; isLoggedIn: boolean };
   data: VoucherData;
   id: number;
+  refetch: () => void;
 }) {
   const buyMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -89,7 +92,7 @@ function VoucherCard({
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return axios.delete(`http://localhost:8080/voucher/delete/${id}`, {
+      return axios.delete(`http://localhost:8080/manage/delete/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -110,7 +113,11 @@ function VoucherCard({
       e.preventDefault();
       deleteMutation.mutate(id, {
         onSuccess: () => {
+          refetch();
           alert("Voucher berhasil dihapus");
+        },
+        onError: () => {
+          alert("Voucher gagal dihapus");
         },
       });
     },
