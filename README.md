@@ -9,7 +9,7 @@ Here are simple introduction to both systems and how to run them.
 The frontend side of the app is built with NextJs 13 written in Typescript using the pages directory. Here are some notable tools that were used :
 - TailwindCSS for styling
 - React-Query & axios for data fetching and server state management
-- Jotai for local global state management
+- Jotai for client-side global state management
 
 ### How to run this program?
 1. Make sure to go inside the `./frontend` directory
