@@ -10,83 +10,71 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type Admin models.Admin
+type Consumer models.Consumer
 
-type CreateAdminBody struct {
+type CreateConsumerBody struct {
 	Email    string `json:"email" form:"email"`
 	Password string `json:"password" form:"password"`
 }
 
-func GetAllAdmins(c *fiber.Ctx) error {
-	var admins []Admin
-
-	database.DB.Find(&admins)
-
-	return c.JSON(admins)
-}
-
-func CreateAdmin(c *fiber.Ctx) error {
-
-	var body CreateAdminBody
-	// if err := c.BodyParser(&body); err != nil {
-	// 	c.Status(http.StatusBadRequest).JSON(fiber.Map{
-	// 		"error": "Cannot parse JSON",
-	// 	})
-	// 	return err
-	// }
+func RegisterConsumer(c *fiber.Ctx) error {
+	var body CreateConsumerBody
 
 	if err := c.BodyParser(&body); err != nil {
-		log.Fatal(err)
+		return c.JSON(fiber.Map{
+			"error": "Cannot parse JSON",
+		})
 	}
 
-	// hashedpass, err := utils.HashPassword(body.Password)
-	// if err != nil {
-	// 	c.Status(http.StatusBadRequest).JSON(fiber.Map{
-	// 		"error": "invalid goblok",
-	// 	})
+	var consumer Consumer
+	consumer.Email = body.Email
+	consumer.Password = body.Password
 
-	// 	return err
-	// }
+	database.DB.Create(&consumer)
 
-	var admin Admin
-	admin.Email = body.Email
-	admin.Password = body.Password
-
-	database.DB.Create(&admin)
-
-	return c.JSON(&admin)
+	return c.JSON(fiber.Map{
+		"message": "Account Created",
+	})
 }
 
-func LoginAdmin(c *fiber.Ctx) error {
+func LoginConsumer(c *fiber.Ctx) error {
+
 	var envs map[string]string
 	envs, err := godotenv.Read(".env")
 	if err != nil {
 		log.Fatal("Error loading .env file")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Internal error",
+		})
 	}
 
-	var body CreateAdminBody
+	var body CreateConsumerBody
 	if err := c.BodyParser(&body); err != nil {
 		log.Fatal(err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Internal error",
+		})
 	}
 
-	var admin Admin
-	database.DB.First(&admin, "email = ?", body.Email)
+	var consumer Consumer
+	database.DB.First(&consumer, "email = ?", body.Email)
 
-	if admin.Email != body.Email {
+	if consumer.Email != body.Email {
 		return c.JSON(fiber.Map{
 			"error": "Email doesn't exists",
 		})
 	}
 
-	if admin.Password != body.Password {
+	if consumer.Password != body.Password {
 		return c.JSON(fiber.Map{
 			"error": "Incorrect password",
 		})
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"email": admin.Email,
-		"role":  "admin",
+		"email": consumer.Email,
+		"role":  "consumer",
+		"id":    consumer.ID,
 	})
 
 	tokenString, err := token.SignedString([]byte(envs["JWT_SECRET"]))
@@ -100,5 +88,4 @@ func LoginAdmin(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"token": tokenString,
 	})
-
 }
